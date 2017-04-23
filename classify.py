@@ -18,27 +18,53 @@ import cv2
 from mahotas.features import surf
 from sklearn.cluster import KMeans
 
+def classify():
+	clf = joblib.load('SatisfactionDetector.pkl') 
+	km = joblib.load('SURFcluster.pkl') 
 
-clf = joblib.load('SatisfactionDetector.pkl') 
-#clf.predict(X)
-km = joblib.load('SURFcluster.pkl') 
+	alldescriptors = []
+	image = "3.jpg"
+	im = mh.imread(image, as_grey=True)
+	im = im.astype(np.uint8)
+	alldescriptors.append(surf.dense(im, spacing=16))
+	# get all descriptors into a single array
+	concatenated = np.concatenate(alldescriptors)
+	print concatenated.shape
+	print('Number of SURF descriptors: {}'.format(len(concatenated)))
+	concatenated = concatenated[::62]
+	ifeatures = []
+	k = 256
+	c = km.predict(concatenated)
+	ifeatures.append(np.array([np.sum(c == ci) for ci in range(k)]))
+	ifeatures = np.array(ifeatures, dtype=float)
+	features = np.save("TestImage", ifeatures)
+	print "features are saved into TestImage"
 
-alldescriptors = []
-image = "3.jpg"
-im = mh.imread(image, as_grey=True)
-im = im.astype(np.uint8)
-alldescriptors.append(surf.dense(im, spacing=16))
-# get all descriptors into a single array
-concatenated = np.concatenate(alldescriptors)
-print concatenated.shape
-print('Number of SURF descriptors: {}'.format(len(concatenated)))
-concatenated = concatenated[::62]
-ifeatures = []
-k = 256
-c = km.predict(concatenated)
-ifeatures.append(np.array([np.sum(c == ci) for ci in range(k)]))
-ifeatures = np.array(ifeatures, dtype=float)
-features = np.save("TestImage", ifeatures)
-print "features are saved into TestImage"
+	print clf.predict(ifeatures)
 
-print clf.predict(ifeatures)
+def classIs():
+	clf = joblib.load('SatisfactionDetector.pkl') 
+	km = joblib.load('SURFcluster.pkl') 
+
+	alldescriptors = []
+	images = glob('test/*.jpg')
+	for im in images:
+		im = mh.imread(im, as_grey=True)
+		im = im.astype(np.uint8)
+		alldescriptors.append(surf.dense(im, spacing=16))
+		# get all descriptors into a single array
+	concatenated = np.concatenate(alldescriptors)
+	print('Number of SURF descriptors: {}'.format(len(concatenated)))
+	
+	concatenated = concatenated[::62]
+	rfeatures = []
+	k = 256
+	for d in concatenated:
+		c = km.predict(concatenated)
+		rfeatures.append(np.array([np.sum(c == ci) for ci in range(k)]))
+	rfeatures = np.array(rfeatures, dtype=float)
+	features = np.save("TestImages", rfeatures)
+	print "features are saved into TestImage"
+	print clf.predict(rfeatures)
+classify()
+classIs()
